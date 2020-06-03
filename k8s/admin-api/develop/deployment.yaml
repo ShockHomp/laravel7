@@ -1,0 +1,33 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: admin-api
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        "k8s.aliyun.com/eci-use-specs": "ecs.t5-lc1m1.small,ecs.t5-lc1m1.small,0.5-1Gi,1-2Gi,2-2Gi"  #根据需要替换 ECS 规格
+    spec:
+      containers:
+        - name: admin-api-nginx
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: ".25"
+          env:
+            - name: aliyun_logs_project
+              value: dandong-api-develop
+            - name: aliyun_logs_machinegroup
+              value: dandong-admin-api-develop
+            - name: aliyun_logs_admin-api-nginx
+              value: /var/log/nginx/*.log
+            - name: aliyun_logs_admin-api-fpm
+              value: /var/log/php-fpm/*.log
+        - name: admin-api-fpm
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: ".5"
+
+

@@ -1,0 +1,18 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  namespace: dandong-api-develop
+  name: dandong-api-develop
+spec:
+  entryPoints:
+    - websecure
+  tls:
+    certResolver: ali
+    domains:
+      - main: "dandong-admin.fasthome.maigengduo.com"
+  routes:
+    - match: Host(`dandong-admin.fasthome.maigengduo.com`)
+      kind: Rule
+      services:
+        - name: admin-api-svc
+          port: 80

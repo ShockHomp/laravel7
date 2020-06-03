@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  dandong-api:
+    container_name: dandong-api
+    build:
+      context: .
+      dockerfile: docker/admin-api/admin-api.Dockerfile
+    ports:
+      - 8090:80
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - PHP_FPM=dandong-fpm
+  dandong-fpm:
+    container_name: dandong-fpm
+    build:
+      context:  .
+      dockerfile: docker/php-fpm/phpfpm.Dockerfile
+    volumes:
+      - ./:/var/www/html
+  dandong-redis:
+    container_name: dandong-redis
+    build: docker/redis
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+    command: redis-server --appendonly yes

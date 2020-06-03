@@ -1,0 +1,14 @@
+bases:
+  - ./../base
+namespace: dandong-api-production
+patches:
+  - ./deployment.yaml
+
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+  - name: registry.cn-beijing.aliyuncs.com/maigengduo/dandong-api
+    newTag: v1.0.10
+  - name: registry.cn-beijing.aliyuncs.com/maigengduo/dandong-php-fpm
+    newTag: v1.0.10

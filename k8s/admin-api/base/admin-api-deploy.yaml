@@ -1,0 +1,132 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: admin-api
+  namespace: default
+  labels:
+    name: admin-api
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      name: admin-api
+  template:
+    metadata:
+      labels:
+        name: admin-api
+    spec:
+      containers:
+        - name: admin-api-nginx
+          image: registry.cn-beijing.aliyuncs.com/maigengduo/dandong-api:latest
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          imagePullPolicy: Always
+          env:
+            - name: aliyun_logs_project
+              value: maigengduo-dev
+            - name: aliyun_logs_machinegroup
+              value: admin-api-machinegroup
+            - name: aliyun_logs_admin-api-nginx
+              value: /var/log/nginx/*.log
+            - name: aliyun_logs_admin-api-fpm
+              value: /var/log/php-fpm/*.log
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: ".25"
+          volumeMounts:
+            - name: app-secret
+              mountPath: /var/www/html/.env
+              subPath: .env
+              readOnly: true
+            - name: volume-sls-admin-api
+              mountPath: /var/log/nginx
+            - name: volume-sls-api-fpm
+              mountPath: /var/log/php-fpm
+        - name: admin-api-fpm
+          image: registry.cn-beijing.aliyuncs.com/maigengduo/dandong-php-fpm:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          volumeMounts:
+            - name: app-secret
+              mountPath: /var/www/html/.env
+              subPath: .env
+              readOnly: true
+            - name: volume-sls-api-fpm
+              mountPath: /var/log/php-fpm
+            - name: app-oauth-key
+              mountPath: /var/www/html/storage/oauth-public.key
+              subPath: oauth-public.key
+            - name: app-oauth-key
+              mountPath: /var/www/html/storage/oauth-private.key
+              subPath: oauth-private.key
+            - name: app-payment-key
+              mountPath: /var/www/html/storage/cert/apiclient_cert.pem
+              subPath: apiclient_cert.pem
+            - name: app-payment-key
+              mountPath: /var/www/html/storage/cert/apiclient_key.pem
+              subPath: apiclient_key.pem
+      initContainers:
+        - name: init-myservice
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              chown www-data:www-data /var/www/html/storage/oauth-*.key && chmod 600 /var/www/html/storage/oauth-*.key && \
+              chown www-data:www-data /var/www/html/storage/cert/*.pem && chmod 600 /var/www/html/storage/cert/*.pem
+
+          volumeMounts:
+            - mountPath: /var/www/html/storage/oauth-public.key
+              name: app-oauth-key
+              subPath: oauth-public.key
+            - mountPath: /var/www/html/storage/oauth-private.key
+              name: app-oauth-key
+              subPath: oauth-private.key
+            - name: app-payment-key
+              mountPath: /var/www/html/storage/cert/apiclient_cert.pem
+              subPath: apiclient_cert.pem
+            - name: app-payment-key
+              mountPath: /var/www/html/storage/cert/apiclient_key.pem
+              subPath: apiclient_key.pem
+
+      restartPolicy: Always
+      volumes:
+        - name: app-secret
+          secret:
+            secretName: admin-api-secret
+        - name: app-oauth-key
+          secret:
+            secretName: api-oauth-key
+            # 权限必须为 600
+            items:
+              - key: oauth-public.key
+                path: oauth-public.key
+                mode: 384
+              - key: oauth-private.key
+                path: oauth-private.key
+                mode: 384
+        - name: app-payment-key
+          secret:
+            secretName: payment-secret
+            items:
+              - key: apiclient_cert.pem
+                path: apiclient_cert.pem
+                mode: 384
+              - key: apiclient_key.pem
+                path: apiclient_key.pem
+                mode: 384
+        - name: volume-sls-api-fpm
+        - name: volume-sls-admin-api

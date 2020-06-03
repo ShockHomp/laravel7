@@ -1,0 +1,7 @@
+commonAnnotations:
+  reloader.stakater.com/auto: "true"
+resources:
+  - admin-api-deploy.yaml
+  - admin-api-hpa.yaml
+  - admin-api-svc.yaml
+
